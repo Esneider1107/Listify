@@ -1,5 +1,6 @@
 // src/services/api.ts
-const API_URL = "http://localhost:3000";
+const API_URL = "http://3.20.233.74:3000";
+
 
 async function apiFetch(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_URL}${path}`, {

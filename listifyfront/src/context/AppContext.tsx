@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import * as api from '@/services/api';
 
 // ---------------- TIPOS ----------------
@@ -85,24 +85,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   // ---------------- REFRESH TASKS ----------------
-  const refreshTasks = async () => {
+  const refreshTasks = useCallback(async () => {
     try {
       const fetchedTasks = await api.getTasks();
-      setTasks(fetchedTasks);
+      // Mapear TaskResponse[] a Task[]
+      const mappedTasks: Task[] = fetchedTasks.map((task: api.TaskResponse) => ({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        category: task.category,
+        dueDate: task.dueDate,
+        done: task.done,
+        shared: task.shared,
+        sharedWith: task.sharedWith,
+      }));
+      setTasks(mappedTasks);
     } catch (error) {
       console.error("Error loading tasks:", error);
     }
-  };
+  }, []);
 
   // ---------------- REFRESH GAME DATA ----------------
-  const refreshGameData = async () => {
-    try {
-      const userProgress = await api.getUserProgress();
+  const refreshGameData = useCallback(async () => {
+  try {
+    const userProgress = await api.getUserProgress();
 
-      const totalXP = userProgress.experience || 0;
-      const level = Math.floor(totalXP / 500) + 1;
-      const xpInCurrentLevel = totalXP % 500;
-
+    const totalXP = Number(userProgress.experience ?? 0);
+    const level = Math.floor(totalXP / 500) + 1;
+    const xpInCurrentLevel = totalXP % 500;
       const achievements: Achievement[] = [
         { id: "1", name: "Primera Tarea", description: "Completa tu primera tarea", unlocked: totalXP >= 10 },
         { id: "2", name: "Mascota Desbloqueada", description: "Desbloquea tu primera mascota", unlocked: userProgress.petUnlocked || false },
@@ -112,36 +122,44 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         { id: "6", name: "Nivel 10", description: "Alcanza el nivel 10", unlocked: level >= 10 },
       ];
 
-      setGameData({
-        level,
-        xp: xpInCurrentLevel,
-        xpToNextLevel: 500,
-        streak: 1,
-        petUnlocked: userProgress.petUnlocked || false,
-        totalExperience: totalXP,
-        achievements,
+        setGameData({
+          level,
+          xp: xpInCurrentLevel,
+          xpToNextLevel: 500,
+          streak: 1,
+          petUnlocked: userProgress.petUnlocked || false,
+          totalExperience: totalXP,
+          achievements,
       });
     } catch (error) {
       console.error("Error loading game data:", error);
     }
-  };
+  }, []);
 
   // ---------------- REFRESH PET ----------------
-  const refreshPet = async () => {
+  const refreshPet = useCallback(async () => {
     try {
       const petData = await api.getPet();
-      setPet(petData);
+      // Mapear PetResponse a Pet
+      const mappedPet: Pet = {
+        id: petData.id,
+        name: petData.name,
+        level: petData.level,
+        experience: petData.experience,
+        unlocked: petData.unlocked,
+      };
+      setPet(mappedPet);
     } catch (error) {
       console.error("Error loading pet:", error);
     }
-  };
+  }, []);
 
   // ---------------- REFRESH ALL ----------------
-  const refreshAll = async () => {
+  const refreshAll = useCallback(async () => {
     setLoading(true);
     await Promise.all([refreshTasks(), refreshGameData(), refreshPet()]);
     setLoading(false);
-  };
+  }, [refreshTasks, refreshGameData, refreshPet]);
 
   // ---------------- CRUD TASKS ----------------
 
@@ -192,7 +210,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     refreshAll();
-  }, []);
+  }, [refreshAll]);
 
   return (
     <AppContext.Provider

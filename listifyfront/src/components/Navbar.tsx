@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CheckSquare, Calendar, Clock, Flame, Share2, Settings } from "lucide-react";
+import { Home, CheckSquare, Clock, Flame, Share2, Settings } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 export default function Navbar() {

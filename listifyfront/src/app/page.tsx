@@ -1,68 +1,91 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Home, CheckSquare, Clock, Settings, HelpCircle, ChevronLeft, ChevronRight, User, Trophy, Flame } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import { getTasks, getTasksByDate, getPet } from '@/services/api';
+import { getTasksByDate, getPet } from '@/services/api';
+
+// ✅ Definir interfaces para los tipos
+interface Task {
+  id: string;
+  title: string;
+  category?: string;
+  done: boolean;
+}
+
+interface Pet {
+  unlocked: boolean;
+  name?: string;
+  level: number;
+  experience: number;
+}
 
 export default function ListifyDashboard() {
   const router = useRouter();
   const { tasks, gameData } = useApp();
   
-  // Usar la fecha actual real en lugar de una fecha fija
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date().getDate());
-  const [tasksForSelectedDate, setTasksForSelectedDate] = useState<any[]>([]);
+  const [tasksForSelectedDate, setTasksForSelectedDate] = useState<Task[]>([]);
   const [loadingDateTasks, setLoadingDateTasks] = useState(false);
-  const [pet, setPet] = useState<any>(null);
+  const [pet, setPet] = useState<Pet | null>(null);
   const [loadingPet, setLoadingPet] = useState(true);
 
-  // Calcular estadísticas reales
   const completedTasks = tasks.filter(t => t.done).length;
   const pendingTasks = tasks.filter(t => !t.done).length;
 
-  useEffect(() => {
-    loadTasksForDate(selectedDate);
-  }, [selectedDate, currentDate]);
-
-  useEffect(() => {
-    loadPetData();
-  }, []);
-
-  const loadPetData = async () => {
-    try {
-      setLoadingPet(true);
-      const petData = await getPet();
-      setPet(petData);
-    } catch (error) {
-      console.error('Error loading pet:', error);
-    } finally {
-      setLoadingPet(false);
-    }
-  };
-
-  const loadTasksForDate = async (day: number) => {
+  // ✅ Usar useCallback para evitar el warning de dependencias
+  const loadTasksForDate = useCallback(async (day: number) => {
     try {
       setLoadingDateTasks(true);
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       
-      // ✅ Crear fecha en hora local (sin conversión UTC)
       const localDate = new Date(year, month, day);
       
-      // ✅ Formatear en YYYY-MM-DD usando los valores locales
       const dateStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
       
       const dateTasks = await getTasksByDate(dateStr);
-      setTasksForSelectedDate(dateTasks);
+      // Mapear TaskResponse[] a Task[]
+      const mappedTasks: Task[] = dateTasks.map((task) => ({
+        id: task.id.toString(),
+        title: task.title,
+        category: task.category,
+        done: task.done,
+        description: task.description,
+        dueDate: task.dueDate,
+        shared: task.shared,
+        sharedWith: task.sharedWith,
+      }));
+      setTasksForSelectedDate(mappedTasks);
     } catch (error) {
       console.error('Error loading tasks for date:', error);
       setTasksForSelectedDate([]);
     } finally {
       setLoadingDateTasks(false);
     }
-  };
+  }, [currentDate]);
+
+  useEffect(() => {
+    loadTasksForDate(selectedDate);
+  }, [selectedDate, loadTasksForDate]);
+
+  useEffect(() => {
+    const loadPetData = async () => {
+      try {
+        setLoadingPet(true);
+        const petData = await getPet();
+        setPet(petData);
+      } catch (error) {
+        console.error('Error loading pet:', error);
+      } finally {
+        setLoadingPet(false);
+      }
+    };
+    
+    loadPetData();
+  }, []);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -70,7 +93,7 @@ export default function ListifyDashboard() {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     
-    const days = [];
+    const days: (number | null)[] = [];
     for (let i = 0; i < firstDay; i++) {
       days.push(null);
     }
@@ -194,7 +217,7 @@ export default function ListifyDashboard() {
                   <Trophy size={32} color="#eab308" />
                   <div>
                     <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                      {gameData.xp}/{gameData.xpToNextLevel} EXP
+                      {gameData.xp}/{gameData.xpToNextLevel} XP
                     </div>
                     <div style={{ width: '256px', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', marginTop: '8px' }}>
                       <div style={{ 

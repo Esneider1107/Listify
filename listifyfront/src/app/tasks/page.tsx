@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useApp } from '@/context/AppContext';
-import { CATEGORIES, TaskCategory } from '@/app/types';
+import { useApp, Task } from '@/context/AppContext';
 import { Plus, Trash2, X, Share2, Users, Edit2, Clock, Save, Home, CheckSquare, Settings, HelpCircle, User, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -19,7 +18,7 @@ export default function TasksPage() {
   const [dueTime, setDueTime] = useState('');
   const [isShared, setIsShared] = useState(false);
   const [sharedWith, setSharedWith] = useState('');
-  const [editingTask, setEditingTask] = useState<string | null>(null);
+  const [editingTask, setEditingTask] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editCategory, setEditCategory] = useState('');
@@ -49,10 +48,10 @@ export default function TasksPage() {
         await addTask({
           title: newTaskTitle,
           description: newTaskDescription || undefined,
-          category: (newTaskCategory || 'home') as TaskCategory,
-          dueDate: taskDueDate,
+          category: newTaskCategory || undefined,
+          dueDate: taskDueDate ? taskDueDate.toISOString() : undefined,
           shared: isShared,
-          sharedWith: isShared && sharedWith ? [sharedWith] : undefined
+          sharedWith: isShared ? sharedWith : undefined,
         });
         
         setNewTaskTitle('');
@@ -70,8 +69,8 @@ export default function TasksPage() {
     }
   };
 
-  const handleStartEdit = (task: any) => {
-    setEditingTask(task.id.toString());
+  const handleStartEdit = (task: Task) => {
+    setEditingTask(task.id);
     setEditTitle(task.title);
     setEditDescription(task.description || '');
     setEditCategory(task.category || '');
@@ -86,7 +85,7 @@ export default function TasksPage() {
     }
   };
 
-  const handleSaveEdit = async (taskId: string) => {
+  const handleSaveEdit = async (taskId: number) => {
     try {
       let taskDueDate = undefined;
       if (editDate) {
@@ -97,11 +96,11 @@ export default function TasksPage() {
         }
       }
 
-      await updateTask(taskId, {
+      await updateTask(taskId.toString(), {
         title: editTitle,
         description: editDescription,
-        category: editCategory as TaskCategory,
-        dueDate: taskDueDate
+        category: editCategory,
+        dueDate: taskDueDate ? taskDueDate.toISOString() : undefined
       });
 
       setEditingTask(null);
@@ -120,19 +119,19 @@ export default function TasksPage() {
     setEditTime('');
   };
 
-  const handleComplete = async (id: string) => {
+  const handleComplete = async (id: number) => {
     try {
-      await completeTask(id);
+      await completeTask(id.toString());
     } catch (error) {
       console.error('Error al completar tarea:', error);
       alert('Error al completar la tarea.');
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (confirm('¿Estás seguro de eliminar esta tarea?')) {
       try {
-        await deleteTask(id);
+        await deleteTask(id.toString());
       } catch (error) {
         console.error('Error al eliminar tarea:', error);
         alert('Error al eliminar la tarea.');
@@ -269,10 +268,10 @@ export default function TasksPage() {
           }}>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {['all', 'pending'].map(f => (
+                {(['all', 'pending'] as const).map(f => (
                   <button
                     key={f}
-                    onClick={() => setFilter(f as any)}
+                    onClick={() => setFilter(f)}
                     style={{
                       padding: '8px 16px',
                       borderRadius: '8px',
@@ -603,7 +602,7 @@ export default function TasksPage() {
                 >
                   {/* Checkbox */}
                   <button
-                    onClick={() => handleComplete(task.id.toString())}
+                    onClick={() => handleComplete(task.id)}
                     style={{
                       width: '24px',
                       height: '24px',
@@ -622,7 +621,7 @@ export default function TasksPage() {
 
                   {/* Task Info */}
                   <div style={{ flex: 1 }}>
-                    {editingTask === task.id.toString() ? (
+                    {editingTask === task.id ? (
                       // MODO EDICIÓN
                       <div>
                         <input
@@ -701,7 +700,7 @@ export default function TasksPage() {
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button
-                            onClick={() => handleSaveEdit(task.id.toString())}
+                            onClick={() => handleSaveEdit(task.id)}
                             style={{
                               padding: '8px 16px',
                               backgroundColor: '#10b981',
@@ -799,7 +798,7 @@ export default function TasksPage() {
                               gap: '4px'
                             }}>
                               <Users size={12} />
-                              {task.sharedWith[0]}
+                              {task.sharedWith}
                             </span>
                           )}
                         </div>
@@ -808,7 +807,7 @@ export default function TasksPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  {editingTask !== task.id.toString() && (
+                  {editingTask !== task.id && (
                     <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                       <button
                         onClick={() => handleStartEdit(task)}
@@ -825,7 +824,7 @@ export default function TasksPage() {
                         <Edit2 size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(task.id.toString())}
+                        onClick={() => handleDelete(task.id)}
                         style={{
                           padding: '8px',
                           border: 'none',

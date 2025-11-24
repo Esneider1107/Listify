@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -14,7 +15,7 @@ interface HistoryItem {
   createdAt: string;
 }
 
-type FilterType = "all" | "completed" | "deleted";
+type FilterType =  "all" | "completed" | "deleted"; 
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -23,31 +24,52 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
 
-  const loadHistory = async (filterType: FilterType) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      let data: HistoryItem[];
-      
-      switch (filterType) {
-        case "completed":
-          data = await historyApi.getCompleted();
-          break;
-        case "deleted":
-          data = await historyApi.getPending();
-          break;
-        default:
-          data = await historyApi.getAll();
-      }
-      
-      setHistoryItems(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar el historial");
-    } finally {
-      setLoading(false);
+const loadHistory = async (filterType: FilterType) => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    let data: HistoryItem[] = [];
+
+    switch (filterType) {
+      case "completed":
+        data = (await historyApi.getCompleted()).map((item) => ({
+          ...item,
+          done: true, // tu API NO lo trae, así que lo creamos
+          createdAt: new Date().toISOString(),
+        }));
+        break;
+
+      case "deleted":
+        data = (await historyApi.getPending()).map((item) => ({
+          ...item,
+          done: false, // idem
+          createdAt: new Date().toISOString(),
+        }));
+        break;
+      case "all":
+        data = [
+          ...(await historyApi.getCompleted()).map((item) => ({
+            ...item,
+            done: true, // tu API NO lo trae, así que lo creamos
+            createdAt: new Date().toISOString(),
+          })),
+          ...(await historyApi.getPending()).map((item) => ({
+            ...item,
+            done: false, // idem
+            createdAt: new Date().toISOString(),
+          })),
+        ];
+        break;
     }
-  };
+
+    setHistoryItems(data);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Error al cargar el historial");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadHistory(filter);

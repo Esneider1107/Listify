@@ -13,64 +13,6 @@ async function apiFetch(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
-/* === TASKS === */
-export const getTasks = () => apiFetch("/tasks");
-export const getTaskById = (id: number) => apiFetch(`/tasks/${id}`);
-export const createTask = (data: any) =>
-  apiFetch("/tasks", { method: "POST", body: JSON.stringify(data) });
-export const updateTask = (id: number, data: any) =>
-  apiFetch(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(data) });
-export const deleteTask = (id: number) =>
-  apiFetch(`/tasks/${id}`, { method: "DELETE" });
-export const markTaskAsDone = (id: number) =>
-  apiFetch(`/tasks/${id}/done`, { method: "PATCH" });
-export const getTasksByCategory = (category: string) =>
-  apiFetch(`/tasks/category/${category}`);
-export const getTasksByDate = (date: string) =>
-  apiFetch(`/tasks/date/${date}`);
-export const getTasksInRange = (from: string, to: string) =>
-  apiFetch(`/tasks/range/${from}/${to}`);
-
-/* === PET === */
-export const getPet = () => apiFetch("/pet");
-export const unlockPet = () =>
-  apiFetch("/pet/unlock", { method: "POST" });
-export const addExperience = (points: number) =>
-  apiFetch("/pet/experience", {
-    method: "POST",
-    body: JSON.stringify({ points }),
-  });
-export const renamePet = (name: string) =>
-  apiFetch("/pet/rename", {
-    method: "PATCH",
-    body: JSON.stringify({ name }),
-  });
-
-/* === USER PROGRESS === */
-export const getUserProgress = () => apiFetch("/user-progress");
-export const addExperienceToUser = (points: number) =>
-  apiFetch("/user-progress/experience", {
-    method: "POST",
-    body: JSON.stringify({ points }),
-  });
-
-/* === HISTORY === */
-export const getHistory = () => apiFetch("/history");
-export const getCompletedHistory = () => apiFetch("/history/completed");
-export const getPendingHistory = () => apiFetch("/history/pending");
-export const addToHistory = (data: any) =>
-  apiFetch("/history", { method: "POST", body: JSON.stringify(data) });
-
-/* === SOCIAL === */
-export const getSharedTasks = () => apiFetch("/social");
-export const getSharedWith = (id: number) =>
-  apiFetch(`/social/${id}/shared-with`);
-export const shareTask = (id: number, sharedWith: string) =>
-  apiFetch(`/social/${id}/share`, {
-    method: "PATCH",
-    body: JSON.stringify({ sharedWith }),
-  });
-
 /* === INTERFACES === */
 export interface TaskResponse {
   id: number;
@@ -90,6 +32,105 @@ export interface PetResponse {
   experience: number;
   unlocked: boolean;
 }
+
+export interface HistoryResponse {
+  id: number;
+  taskId: number;
+  title: string;
+  completedAt: string;
+  category?: string;
+}
+
+export interface UserProgressResponse {
+  experience: number;
+  level: number;
+  petUnlocked?: boolean;
+}
+
+// ✅ Tipos para crear/actualizar tareas
+export interface CreateTaskData {
+  title: string;
+  description?: string;
+  category?: string;
+  dueDate?: string;
+  shared?: boolean;
+  sharedWith?: string;
+}
+
+export interface UpdateTaskData {
+  title?: string;
+  description?: string;
+  category?: string;
+  dueDate?: string;
+  done?: boolean;
+  shared?: boolean;
+  sharedWith?: string;
+}
+
+export interface AddToHistoryData {
+  taskId: number;
+  title: string;
+  category?: string;
+  completedAt: string;
+}
+
+/* === TASKS === */
+export const getTasks = (): Promise<TaskResponse[]> => apiFetch("/tasks");
+export const getTaskById = (id: number): Promise<TaskResponse> => apiFetch(`/tasks/${id}`);
+export const createTask = (data: CreateTaskData): Promise<TaskResponse> =>
+  apiFetch("/tasks", { method: "POST", body: JSON.stringify(data) });
+export const updateTask = (id: number, data: UpdateTaskData): Promise<TaskResponse> =>
+  apiFetch(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+export const deleteTask = (id: number): Promise<void> =>
+  apiFetch(`/tasks/${id}`, { method: "DELETE" });
+export const markTaskAsDone = (id: number): Promise<TaskResponse> =>
+  apiFetch(`/tasks/${id}/done`, { method: "PATCH" });
+export const getTasksByCategory = (category: string): Promise<TaskResponse[]> =>
+  apiFetch(`/tasks/category/${category}`);
+export const getTasksByDate = (date: string): Promise<TaskResponse[]> =>
+  apiFetch(`/tasks/date/${date}`);
+export const getTasksInRange = (from: string, to: string): Promise<TaskResponse[]> =>
+  apiFetch(`/tasks/range/${from}/${to}`);
+
+/* === PET === */
+export const getPet = (): Promise<PetResponse> => apiFetch("/pet");
+export const unlockPet = (): Promise<PetResponse> =>
+  apiFetch("/pet/unlock", { method: "POST" });
+export const addExperience = (points: number): Promise<PetResponse> =>
+  apiFetch("/pet/experience", {
+    method: "POST",
+    body: JSON.stringify({ points }),
+  });
+export const renamePet = (name: string): Promise<PetResponse> =>
+  apiFetch("/pet/rename", {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+
+/* === USER PROGRESS === */
+export const getUserProgress = (): Promise<UserProgressResponse> => apiFetch("/user-progress");
+export const addExperienceToUser = (points: number): Promise<UserProgressResponse> =>
+  apiFetch("/user-progress/experience", {
+    method: "POST",
+    body: JSON.stringify({ points }),
+  });
+
+/* === HISTORY === */
+export const getHistory = (): Promise<HistoryResponse[]> => apiFetch("/history");
+export const getCompletedHistory = (): Promise<HistoryResponse[]> => apiFetch("/history/completed");
+export const getPendingHistory = (): Promise<HistoryResponse[]> => apiFetch("/history/pending");
+export const addToHistory = (data: AddToHistoryData): Promise<HistoryResponse> =>
+  apiFetch("/history", { method: "POST", body: JSON.stringify(data) });
+
+/* === SOCIAL === */
+export const getSharedTasks = (): Promise<TaskResponse[]> => apiFetch("/social");
+export const getSharedWith = (id: number): Promise<string[]> =>
+  apiFetch(`/social/${id}/shared-with`);
+export const shareTask = (id: number, sharedWith: string): Promise<TaskResponse> =>
+  apiFetch(`/social/${id}/share`, {
+    method: "PATCH",
+    body: JSON.stringify({ sharedWith }),
+  });
 
 /* === OBJETOS AGRUPADOS === */
 export const tasksApi = {

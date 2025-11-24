@@ -8,7 +8,6 @@ export default function SocialPage() {
   const [sharedTasks, setSharedTasks] = useState<TaskResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedTask, setExpandedTask] = useState<number | null>(null);
 
   useEffect(() => {
     loadSharedTasks();
@@ -26,20 +25,6 @@ export default function SocialPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getSharedWithInfo = async (taskId: number) => {
-    try {
-      const info = await socialApi.getSharedWith(taskId);
-      return info.sharedWith || 'No especificado';
-    } catch (err) {
-      console.error('Error getting shared info:', err);
-      return 'Error al obtener info';
-    }
-  };
-
-  const toggleExpand = (taskId: number) => {
-    setExpandedTask(expandedTask === taskId ? null : taskId);
   };
 
   if (loading) {

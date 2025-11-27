@@ -6,7 +6,7 @@ async function bootstrap() {
 
       app.enableCors({
       origin: [
-        'https://frontlistify.vercel.app',
+        'https://frontlistifyyyy.vercel.app',
         /\.vercel\.app$/
       ],
       credentials: true,

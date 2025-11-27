@@ -6,14 +6,13 @@ async function bootstrap() {
 
       app.enableCors({
       origin: [
-        'http://localhost:3001',
         'https://frontlistify.vercel.app',
         /\.vercel\.app$/
       ],
       credentials: true,
     });
 
-  await app.listen(4000, '0.0.0.0');
+  await app.listen(3000, '0.0.0.0');
 }
 
 bootstrap();
